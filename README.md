@@ -1,45 +1,82 @@
-# SatQuery · Flood Impact
+# SatQuery · Flood Lab
 
-Local IIT Mandi Track B workspace at http://localhost:8770. Original SatQuery remains on 8767. **Real Nepal evidence is available; full Track B completion is still pending.** No competition submission has been made.
+### Observe. Map. Assess.
 
-## Run locally
+A local workspace for turning before/after satellite observations into **water candidates, infrastructure exposure and inspectable evidence**. Built for remote-sensing researchers and analysts reviewing possible flood impacts.
 
-Clone this repository, open PowerShell in its folder, and run `./start-demo.ps1`.
-The launcher uses WSL distro `Ubuntu`. By default it expects the flood Python environment at `/root/satquery-flood-lab/venv` and the optional AI environment at `/root/satquery/.venv`. Set `SATQUERY_FLOOD_PYTHON_WSL` or `SATQUERY_AI_PYTHON_WSL` to override those interpreter paths.
+**Status:** working research prototype with saved Nepal cases. Flood/debris accuracy and real settlement isolation remain unvalidated. Outputs guide review; they do not establish damage or safe travel.
 
-Portable core setup: Python 3.11, install `requirements-lock.txt`, then run `python -m uvicorn floodlab.server:app --host 127.0.0.1 --port 8770`. Satellite and historical OSM acquisition require `CDSE_CLIENT_ID`, `CDSE_CLIENT_SECRET`, and `OHSOME_API_KEY` in Git-ignored `.env.local`. Never commit this file or paste credentials into reports. The AI worker additionally needs its pinned Qwen3 model and compatible Torch/Transformers runtime; see `docs/copilot-model.json`.
+[See the walkthrough](docs/guides/REVIEWER_WALKTHROUGH.md) · [Run locally](docs/guides/GETTING_STARTED.md) · [Read the evidence](docs/guides/EVIDENCE.md) · [Architecture](docs/guides/ARCHITECTURE.md)
 
-## Public repository contents
+![Actual Flood Lab workspace: Syapru saved-run map and an answer reporting 95,600 square metres of new-water candidates, with its uncertainty warning visible.](docs/images/analysis.png)
 
-This repository includes source code, UI preview imagery, verification records, and report PDFs. It intentionally excludes acquired satellite rasters, historical OSM snapshots, frozen per-run payloads, and EMSR GRA reference GeoPackages. The event IDs in `docs/demo-script.md` refer to the locally verified demo workspace; a fresh clone will not contain those saved runs. Configure data access and acquire or prepare inputs locally before running a new analysis.
-## Workspace workflow
+*Actual application, captured locally on 27 October 2026 using frozen Syapru run `event-fe47db331390`. Gold marks candidates; intersections indicate possible exposure. The answer uses an explicitly selected topic and saved calculations. [Screenshot provenance](docs/images/README.md).*
 
-Open **Analyze an area and date**, supply west/south/east/north coordinates and a past UTC flood date, then run. The bounded automatic path discovers a same-platform, same-orbit 12-day VV/VH pair, requests terrain-corrected SAR, validates scene identity and alignment, acquires a pre-event OSM snapshot, computes water candidates and infrastructure intersections, and freezes downloadable evidence. Progress reconnects after page reload; server interruption is reported as interrupted. Only one acquisition job runs at a time.
+## From imagery to an answer you can inspect
 
-Maximum automatic area: one million 10 m pixels and 2500 pixels per side. No antimeridian support. Missing scene coverage and catalogue pagination fail closed. Automatic optical/debris proxy and historical road topology are connected and verified on a fresh Workspace API run. Empty access results do not mean no isolated settlements.
+Flood review needs more than a water mask: observations must be comparable, infrastructure must predate the event, and reported numbers must point back to calculations.
 
-For the more complete prepared Nepal case, select `nepal-syapru-004`: SAR August 16/28, optical August 12/27, historical OSM July 27, 2026. It includes a debris proxy and a historical-node road graph. Settlement access remains unknown because of coverage/boundary and snapping limitations.
+1. **Choose an area and date** or open a frozen analysis.
+2. **Check observations.** Compare Sentinel-1 dates, inspect available Sentinel-2 RGB previews, and retain invalid coverage as unknown.
+3. **Map candidates and exposure.** Apply the fixed SAR-change baseline, intersect historical buildings/roads/bridges, and assess access only where graph inputs permit it.
+4. **Inspect and export.** Ask about saved results, follow the processing record, and download masks, feature tables, reports and SHA-256 manifests.
 
-Use the copilot for evidence-backed English/Nepali answers. A local Qwen3-0.6B model selects a topic; templates insert saved calculations with source pointers. Topic selection scored 9/12 development questions before guardrails, not an independent benchmark. Select a topic explicitly when routing is wrong. Nepali wording needs human review.
+The workspace runs at **http://localhost:8770/**, separately from the original SatQuery application.
 
-## Evidence boundaries
+## Review it in one minute
 
-Water baseline: VV below -17 dB after the event and a drop of at least 3 dB; fixed uncalibrated defaults. Two-date water is not proof of permanent water. Invalid pixels are excluded. All arrays load into RAM; pixelwise tiling tests do not validate tiled neural-network inference.
+Follow the [saved-run walkthrough](docs/guides/REVIEWER_WALKTHROUGH.md): map → optical observations → saved answer → processing record → evidence limits.
 
-Debris proxy: vegetation loss to bare ground with SAR change. It can confuse clearing/agriculture and miss deposits on already bare ground. Diagnostic agreement with one EMSR927 landslide AOI: IoU 0.3279, F1 0.4939, recall 0.3285. Reference dates, resolution and class differ. This is not independent validated debris accuracy. Water accuracy has no compatible reference score.
+Without installing, open the [situation report](output/pdf/nepal-situation-report.pdf), [technical report](output/pdf/technical-report.pdf) or [full evidence report](output/pdf/flood-impact-final-report.pdf). These historical deliverables are preserved as generated. The [evidence guide](docs/guides/EVIDENCE.md) explains scope and later verification.
 
-EMSR damage labels remain evaluation-only and are not prediction inputs or threshold-tuning data. Their source GeoPackages are excluded from this public repository; registered filenames and SHA-256 digests remain in `docs/dataset-readiness.json`. Historical road nodes preserve crossings; turn restrictions are not modelled. Exposure does not establish damage, actual closures, casualties or evacuation instructions.
+**Fresh-clone expectation:** source, screenshots, preview imagery, test records and PDFs are included. Acquired rasters, historical OSM payloads and frozen run folders are excluded. The screenshot's saved event will not appear in a fresh clone. Use the [offline synthetic example](docs/guides/GETTING_STARTED.md#offline-example) to exercise calculations and exports without accounts.
 
-## Verification
+## What works today
 
-Run `python -m pytest -q --junitxml=docs/test-results.xml --disable-warnings` in the flood environment. Latest machine test report is in `docs/test-results.xml`; live download checks are in `docs/live-verification.json`. Frozen results cannot overwrite existing run IDs. SHA-256 evidence hashes are downloadable with each run.
+| Capability | Current boundary |
+| --- | --- |
+| Area/date acquisition | Bounded provider-backed SAR, historical OSM, topology and optical/debris workflow. Requires API access and coverage. |
+| Water-change mapping | Fixed VV threshold and change rule; no trained flood model or event calibration. |
+| Infrastructure exposure | Geometry intersections with source IDs and valid coverage. Exposure is not damage. |
+| Road-access comparison | Synthetic graph cases tested. Real Nepal access remains unknown where hubs, coverage or snapping are unresolved. |
+| Optical views and debris | Dated RGB previews where registered; vegetation-loss/SAR-change proxy remains unvalidated. |
+| English/Nepali answers | Saved values rendered by topic. Optional Qwen3-0.6B selects topics; explicit selection works without it. Nepali needs review. |
+| Exports | GeoTIFF, GeoJSON, CSV, English/Nepali HTML, provenance, sensitivity and frozen hashes. |
 
-## Remaining acceptance work
+The offline fixture uses invented rasters and geometry. Independent accuracy validation, direct debris labels, verified real access and broader operational evaluation remain open. [Methods and limits](docs/guides/ARCHITECTURE.md#methods-and-limits).
 
-- Validate on additional compatible independent events; current automatic success covers one Nepal rectangle.
-- Browser interaction/layout, launcher, and full API workflow have been exercised.
-- Independent validation, meaningful operational timings, Nepali review.
-- One-page sitrep, two-page technical report, and full evidence report are rendered in output/pdf; record the 90-second demo.
-- The owner authorized this public repository push. Organizer clearance for reused SatQuery components and submission authorization remain unconfirmed; no competition submission has been made.
+## Evidence at a glance
 
-Contains modified Copernicus Sentinel data 2026. Sentinel Data Legal Notice: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice. Other sources: Copernicus DEM; © OpenStreetMap contributors (ODbL), historical extraction via HeiGIT/ohsome; Copernicus EMS reference products (evaluation only); Qwen/Qwen3-0.6B (Apache-2.0, pinned revision in model record). Retain source attribution and upstream license terms.
+| Measurement | Result | Scope and source |
+| --- | --- | --- |
+| Software regression | **70 passed**, 31 warnings | Fresh check on 27 Oct 2026 in the existing Python 3.11 environment; [verification](docs/presentation/VERIFICATION.md). No accuracy claim. |
+| Full area/date runtime | **51.6 s mean**, 35.5–81.8 s | Five historical successes: four Syapru rectangles and one Timure request. [Dated record](docs/closure-checks.md). Small repeated sample. |
+| Water-reference agreement | **IoU 1.34%**, recall 1.37% | Two AOIs, 57,446 valid pixels. Poor agreement against preliminary **mixed-impact** UNOSAT mapping, not water-only truth. [Details](docs/guides/EVIDENCE.md#reference-comparisons). |
+
+No measured cost savings, field outcomes or production-readiness claim is made. Poor reference agreement remains a limitation to investigate.
+
+## Start and explore
+
+For an existing configured WSL installation, open PowerShell in this repository:
+
+```powershell
+.\start-demo.ps1
+```
+
+The launcher expects existing Python environments; it does not install them. New clones should follow [Python setup, the offline example and API access](docs/guides/GETTING_STARTED.md). The dependency record needs the documented `pyarrow` supplement. Optional AI has a separate CUDA/model setup.
+
+| Looking for… | Go here |
+| --- | --- |
+| Setup and troubleshooting | [Getting started](docs/guides/GETTING_STARTED.md) |
+| Strongest saved example and click sequence | [Reviewer walkthrough](docs/guides/REVIEWER_WALKTHROUGH.md) |
+| Data flow, methods, code and outputs | [Architecture](docs/guides/ARCHITECTURE.md) |
+| Benchmarks, source roles and open work | [Evidence guide](docs/guides/EVIDENCE.md) |
+| Presentation checks and fresh regression | [Verification](docs/presentation/VERIFICATION.md) |
+| Reports and narration | [Full PDF](output/pdf/flood-impact-final-report.pdf) · [90-second script](docs/demo-script.md) |
+| Competition scope and inheritance | [Dated specification audit](docs/official-spec-audit.md) · [Reuse audit](docs/reuse-audit.md) |
+
+## Sources and attribution
+
+Contains modified Copernicus Sentinel data 2026. [Sentinel data notice](https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice). Other inputs: Copernicus DEM; [© OpenStreetMap contributors](https://www.openstreetmap.org/copyright), historical extraction via HeiGIT/ohsome; EMSR927 and UNOSAT products for evaluation only. Qwen3-0.6B provides optional topic routing.
+
+See [source roles and links](docs/guides/EVIDENCE.md#data-sources), the [existing MIT software license](LICENSE) and [upstream notices](vendor/SATQUERY-LICENSE.txt). Data and model terms apply separately. No hosted demo or competition submission is claimed.
